@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	models "github.com/project-flogo/ml/activity/inference/model"
 	"github.com/project-flogo/core/support/log"
+	models "github.com/project-flogo/ml/activity/inference/model"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 )
 
@@ -52,12 +52,8 @@ func (i *TensorflowModel) Run(model *models.Model) (out map[string]interface{}, 
 		case reflect.Slice, reflect.Array:
 			shape := model.Metadata.Inputs.Features[inputName].Shape
 			typ := model.Metadata.Inputs.Features[inputName].Type
-			data, err := checkDataTypes(model.Inputs[inputName], shape, typ, inputName)
-			if err != nil {
-				return nil, err
-			}
 
-			inputs[inputMap.Output(0)], err = tf.NewTensor(data)
+			inputs[inputMap.Output(0)], err = coerce2RankTypeTensorFlow(model.Inputs[inputName], shape, typ)
 			if err != nil {
 				return nil, err
 			}
@@ -143,6 +139,10 @@ func getTensorValue(tensor *tf.Tensor) interface{} {
 		return tensor.Value().([][]string)
 	case []string:
 		return tensor.Value().([]string)
+	case string:
+		return tensor.Value().(string)
+	case float32:
+		return tensor.Value().(float32)
 	case []float32:
 		return tensor.Value().([]float32)
 	case [][]float32:
@@ -155,10 +155,14 @@ func getTensorValue(tensor *tf.Tensor) interface{} {
 		return tensor.Value().([]int64)
 	case [][]int64:
 		return tensor.Value().([][]int64)
+	case int32:
+		return tensor.Value().(int32)
 	case []int32:
 		return tensor.Value().([]int32)
 	case [][]int32:
 		return tensor.Value().([][]int32)
+	case byte:
+		return tensor.Value().(byte)
 	case []byte:
 		return tensor.Value().([]byte)
 	case [][]byte:
